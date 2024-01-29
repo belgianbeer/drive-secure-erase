@@ -1,0 +1,168 @@
+#! /bin/sh
+
+# about Security Erase
+#   https://wiki.ninth-nine.com/FreeBSD/camcontrol%20security
+#
+#   https://wiki.archlinux.jp/index.php/ソリッドステートドライブ/メモリセルの消去
+#
+
+#  $ camcontrol security XX
+#  pass2: <INTEL SSDSC2CW120A3 400i> ACS-2 ATA SATA 3.x device
+#  pass2: 400.000MB/s transfers
+#  
+#  Security Option           Value
+#  supported                 yes
+#  enabled                   no
+#  drive locked              no
+#  security config frozen    no
+#  count expired             no
+#  security level            high
+#  enhanced erase supported  yes
+#  erase time                4 min
+#  enhanced erase time       2 min
+#  master password rev       fffe
+
+# Linux
+#     hdparm --security-erase 
+#
+
+temp=$(mktemp /tmp/_ata_erase_XXXXXXX)
+trap "rm -f ${temp}" 0 1 2 3 5 15
+
+u=user
+p=pass
+
+#  ----- set_secinfo -----
+#
+__set_secinfo_FreeBSD () {
+	camcontrol security ${1} > ${temp} || exit
+}
+
+__set_secinfo_Linux () {
+	hdparm -I ${1} |
+	  sed -n -e '1,/^Standards:/p' -e '/^Security/,/^Logical/p' |
+	  sed -e '/^Logical/d' -e '/^Standards/s/.*//' > ${temp} || exit
+}
+
+#  ----- ready_check -----
+#
+__ready_check_FreeBSD () {
+	if [ "$(sed -n -e '/^supported  */s///p' $temp)" != yes ]; then
+		echo ${1} is not supported 1>&2
+		exit 1
+	fi
+
+	if [ "$(sed -n -e '/^security config frozen  */s///p' $temp)" = yes ]; then
+		echo ${1} is frozen 1>&2
+		exit 1
+	fi
+}
+
+__ready_check_Linux () {
+	if ! grep -q '^[ 	]*supported$' ${temp}; then
+		echo ${1} is not supported 1>&2
+		exit 1
+	fi
+
+	if grep -q '^[ 	]*frozen$' ${temp}; then
+		echo ${1} is frozen 1>&2
+		exit 1
+	fi
+}
+
+# ----- drive_erase -----
+#
+__drive_erase_FreeBSD () {
+
+	__ready_check_FreeBSD ${1}
+
+	if [ "$(sed -n -e '/^enhanced erase supported  */s///p' $temp)" = yes ]; then
+		enhanced=yes
+	else
+		enhanced=no
+	fi
+
+	if [ "$(sed -n -e '/^enabled  */s///p' $temp)" = no ]; then
+		(set -x; camcontrol security ${1} -U ${u} -s ${p})
+	fi
+
+	if [ "${enhanced}" = yes ]; then
+		grep '^enhanced erase time' ${temp} >&2
+		(set -x; camcontrol security ${1} -U ${u} -h ${p} -y)
+	else
+		grep '^erase time' ${temp} >&2
+		(set -x; camcontrol security ${1} -U ${u} -e ${p} -y)
+	fi
+}
+
+__drive_erase_Linux () {
+
+	__ready_check_Linux ${1}
+
+	if grep -q '^[ 	]supported: enhanced erase$' ${temp} ; then
+		enhanced=yes
+	else
+		enhanced=no
+	fi
+
+	if ! grep -q '^[ 	]*enabled$' ${temp}; then
+		(set -x; hdparm --user-master ${u} --security-set-pass ${p} ${1})
+	fi
+
+	echo >&2
+	grep 'ERASE UNIT' ${temp} >&2
+	if [ "${enhanced}" = yes ]; then
+		(set -x; hdparm --user-master ${u} --security-erase-enhanced ${p} ${1})
+	else
+		(set -x; hdparm --user-master ${u} --security-erase ${p} ${1})
+	fi
+}
+
+# ----- drive_unlock -----
+#
+__drive_unlock_FreeBSD () {
+	if [ "$(sed -n -e '/^drive locked  */s///p' $temp)" = yes ]; then
+		(set -x ; camcontrol security ${1} -U ${u} -k ${p})
+	fi
+	if [ "$(sed -n -e '/^enabled  */s///p' $temp)" = yes ]; then
+		(set -x ; camcontrol security ${1} -U ${u} -d ${p})
+	fi
+}
+
+__drive_unlock_Linux () {
+	if grep -q '^[ 	]*locked$' ${temp}; then
+		(set -x; hdparm --user-master ${u} --security-unlock ${p} ${1})
+	fi
+	if grep -q '^[ 	]*enabled$' ${temp}; then
+		(set -x; hdparm --user-master ${u} --security-disable ${p} ${1})
+	fi
+}
+
+# ----- main ------
+#
+os_type=$(uname -s)
+set_secinfo=__set_secinfo_${os_type}
+ready_check=__ready_check_${os_type}
+drive_erase=__drive_erase_${os_type}
+drive_unlock=__drive_unlock_${os_type}
+
+if [ -z "${1}" ]; then
+	echo "Usage: ${0##*/} drive [ yes ]" 1>&2
+	exit 1
+fi
+
+eval $set_secinfo ${1}
+
+case "$0" in
+
+*drive-security-erase)
+	if [ "${2}" != yes ] ; then
+		cat ${temp}
+		exit
+	fi
+	eval $drive_erase ${1} ${2}
+	;;
+*drive-security-unlock)
+	eval $drive_unlock ${1}
+	;;
+esac
