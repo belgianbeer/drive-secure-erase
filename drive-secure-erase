@@ -1,15 +1,56 @@
 #! /bin/sh
+#
+#  drive-secure-erase - Erase all user data on the drive.
+#
+#  Copyright (c) 2023 Masato Minda
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
 
-# about Security Erase
+#  $Id: drive-secure-erase,v 1.7 2024/02/01 22:30:26 minmin Exp $
+
+#
+#  WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!!
+#
+#  This command is very dangerous. Because it will ERASE ALL DATA on the
+#  SSD in a few seconds. HDD takes several hours to erase. There is no
+#  way to recover the data erased by this command.
+# 
+#  When this command is used against an SSD drive all its cells will be
+#  marked as empty, restoring it to factory default write performance.
+#
+#  WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!!
+#
+
+#  about Security Erase (in Japanese)
 #   https://wiki.ninth-nine.com/FreeBSD/camcontrol%20security
-#
 #   https://wiki.archlinux.jp/index.php/ソリッドステートドライブ/メモリセルの消去
-#
 
+#  FreeBSD
+#
 #  $ camcontrol security XX
 #  pass2: <INTEL SSDSC2CW120A3 400i> ACS-2 ATA SATA 3.x device
 #  pass2: 400.000MB/s transfers
-#  
+#
 #  Security Option           Value
 #  supported                 yes
 #  enabled                   no
@@ -22,9 +63,8 @@
 #  enhanced erase time       2 min
 #  master password rev       fffe
 
-# Linux
-#     hdparm --security-erase 
-#
+#  Linux
+#  $ hdparm --security-erase /dev/sdX
 
 temp=$(mktemp /tmp/_ata_erase_XXXXXXX)
 trap "rm -f ${temp}" 0 1 2 3 5 15
@@ -47,26 +87,52 @@ __set_secinfo_Linux () {
 #  ----- ready_check -----
 #
 __ready_check_FreeBSD () {
+	local _ok=0
+
 	if [ "$(sed -n -e '/^supported  */s///p' $temp)" != yes ]; then
-		echo ${1} is not supported 1>&2
+		echo >&2
+		echo '***' ${1} is not supported >&2
 		exit 1
+	else
+		_ok=1
 	fi
 
 	if [ "$(sed -n -e '/^security config frozen  */s///p' $temp)" = yes ]; then
-		echo ${1} is frozen 1>&2
+		echo >&2
+		echo '***' ${1} is frozen. Secure erase not possible. >&2
 		exit 1
+	else
+		_ok=$((_ok + 1))
+	fi
+
+	if [ "x${2}" = xverbose ] && [ "${_ok}" = 2 ]; then
+		echo
+		echo '***' ${1} is ready for secure erase.
 	fi
 }
 
 __ready_check_Linux () {
+	local _ok=0
+
 	if ! grep -q '^[ 	]*supported$' ${temp}; then
-		echo ${1} is not supported 1>&2
+		echo >&2
+		echo '***' ${1} is not supported >&2
 		exit 1
+	else
+		_ok=1
 	fi
 
 	if grep -q '^[ 	]*frozen$' ${temp}; then
-		echo ${1} is frozen 1>&2
+		echo >&2
+		echo '***' ${1} is frozen. Secure erase not possible. >&2
 		exit 1
+	else
+		_ok=$((_ok + 1))
+	fi
+
+	if [ "x${2}" = xverbose ] && [ "${_ok}" = 2 ]; then
+		echo
+		echo '***' ${1} is ready for secure erase.
 	fi
 }
 
@@ -76,7 +142,7 @@ __drive_erase_FreeBSD () {
 
 	__ready_check_FreeBSD ${1}
 
-	if [ "$(sed -n -e '/^enhanced erase supported  */s///p' $temp)" = yes ]; then
+	if [ "${2}" = enhance ] && [ "$(sed -n -e '/^enhanced erase supported  */s///p' $temp)" = yes ]; then
 		enhanced=yes
 	else
 		enhanced=no
@@ -99,7 +165,7 @@ __drive_erase_Linux () {
 
 	__ready_check_Linux ${1}
 
-	if grep -q '^[ 	]supported: enhanced erase$' ${temp} ; then
+	if [ "${2}" = enhance ] && grep -q '^[ 	]supported: enhanced erase$' ${temp} ; then
 		enhanced=yes
 	else
 		enhanced=no
@@ -147,22 +213,21 @@ drive_erase=__drive_erase_${os_type}
 drive_unlock=__drive_unlock_${os_type}
 
 if [ -z "${1}" ]; then
-	echo "Usage: ${0##*/} drive [ yes ]" 1>&2
+	echo "Usage: ${0##*/} drive [yes|unlock]" >&2
 	exit 1
 fi
 
-eval $set_secinfo ${1}
+$set_secinfo ${1}
 
-case "$0" in
+case "x${2}" in
 
-*drive-security-erase)
-	if [ "${2}" != yes ] ; then
-		cat ${temp}
-		exit
-	fi
-	eval $drive_erase ${1} ${2}
+xyes|xenhance)
+	$drive_erase ${1} ${2}
 	;;
-*drive-security-unlock)
-	eval $drive_unlock ${1}
+xunlock)
+	$drive_unlock ${1}
 	;;
+x)
+	cat ${temp}
+	$ready_check ${1} verbose
 esac
