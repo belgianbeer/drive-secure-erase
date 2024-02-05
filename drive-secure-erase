@@ -77,11 +77,10 @@ p=pass
 __get_secureinfo_FreeBSD () {
 	camcontrol security ${1} > ${temp} || exit
 }
-
 __get_secureinfo_Linux () {
-	hdparm -I ${1} |
-	  sed -n -e '1,/^Standards:/p' -e '/^Security/,/^Logical/p' |
-	  sed -e '/^Logical/d' -e '/^Standards/s/.*//' > ${temp} || exit
+	hdparm -I ${1} | sed -e '/^Standards:/,/^Security:/c\
+\
+Security:' -e '/^Logical /,$d' > ${temp} || exit
 }
 
 #  --------------------------------------------------
