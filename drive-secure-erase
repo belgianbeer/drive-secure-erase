@@ -95,7 +95,7 @@ __is_enhance_FreeBSD () {
 	[ "$(sed -n -e '/^enhanced erase supported  */s///p' $temp)" = yes ]
 }
 __is_enhance_Linux () {
-	grep -q '^[ 	]supported: enhanced erase$' ${temp}
+	grep -q '^[ 	]*supported: enhanced erase$' ${temp}
 }
 #  --------------------------------------------------
 __is_frozen_FreeBSD () {
