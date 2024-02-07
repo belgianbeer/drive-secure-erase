@@ -6,11 +6,11 @@ drive-secure-erase は、SSDのすべてのデータを消去するコマンド�
 
 ## WARNING! WARNING! WARNING!
 
-drive-secure-erase is very dangerous.
+drive-secure-erase is very dangerous command.
 The process takes only a few seconds, and there is no way to recover the erased data.
 If used incorrectly, it will lead to irreparable consequences.
 
-drive-secure-eraseは大変危険です。
+drive-secure-eraseは大変危険なコマンドです。
 処理は数秒で完了し、消去したデータを復活する手段はありません。
 誤って使用すると取り返しのつかない結果を招きます。
 
