@@ -1,8 +1,20 @@
-# drive-secure-erase
+# drive-secure-erase <!-- omit in toc -->
 
-drive-secure-erase is a command that erases all data on the SSD. It factory resets the state of the SSD's cells, so it also restores write performance. It works on FreeBSD and Linux.
+drive-secure-erase is a command that erases all data on the SSD.
+It factory resets the state of the SSD's cells, so it also restores write performance.
+It works on FreeBSD and Linux.
 
-drive-secure-erase は、SSDのすべてのデータを消去するコマンドです。SSDのセルの状態を工場出荷時にリセットするため、書き込み性能も回復します。FreeBSDとLinuxで動作します。
+drive-secure-erase は、SSDのすべてのデータを消去するコマンドです。
+SSDのセルの状態を工場出荷時にリセットするため、書き込み性能も回復します。
+FreeBSDとLinuxで動作します。
+
+- [WARNING! WARNING! WARNING!](#warning-warning-warning)
+- [How to use drive-secure-erase](#how-to-use-drive-secure-erase)
+	- [Preparing on Linux](#preparing-on-linux)
+	- [Checking Secure Erase status](#checking-secure-erase-status)
+	- [Performing Secure Erase](#performing-secure-erase)
+- [Caution](#caution)
+- [What does drive-secure-erase do?](#what-does-drive-secure-erase-do)
 
 ## WARNING! WARNING! WARNING!
 
@@ -84,3 +96,19 @@ Not to mention the damage caused by suddenly erasing the contents of the system 
 誤ってシステムドライブを指定した場合、多くは"fronzen"で消去できません。
 しかしシステム構成によっては消去できる場合があります。
 システムドライブの内容をいきなり消去した場合の被害は言うまでもありません。
+
+In the case of the author, the target SSD is connected with a SATA USB conversion adapter and drive-secure-erase is used.
+
+作者の場合は、対象のSSDを、SATAのUSB変換アダプタで接続してdrive-secure-eraseを使っています。
+
+## What does drive-secure-erase do?
+
+Erasing drive-secure-erase does not require any special processing.
+You don't need this command if you use camcontrol's security command on FreeBSD or hdperm's --secure-erase on Linux.
+However, using these commands requires a bit of work and is simply not available.
+drive-secure-erase makes use of them internally to make erasure easy to perform.
+
+drive-secure-eraseの消去は特別な処理を行っているわけではありません。
+FreeBSDであればcamcontrolのsecurityコマンド、Linuxではhdpermの--secure-eraseを使えば本コマンドは不要です。
+ただしこれらのコマンドを使うには少しばかりの手続きが必要で、単純には利用できません。
+drive-secure-eraseは内部でそれらを利用して、消去が簡単に実行できるようにしています。
