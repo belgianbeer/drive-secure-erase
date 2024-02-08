@@ -14,6 +14,7 @@ FreeBSDとLinuxで動作します。
 	- [Checking Secure Erase status](#checking-secure-erase-status)
 	- [Performing Secure Erase](#performing-secure-erase)
 - [Caution](#caution)
+- [drive-secure-erase for HDD](#drive-secure-erase-for-hdd)
 - [What does drive-secure-erase do?](#what-does-drive-secure-erase-do)
 
 ## WARNING! WARNING! WARNING!
@@ -87,12 +88,16 @@ $
 
 ## Caution
 
-Be sure not to make a mistake in the drive letter you specify.
+It does not support erasing NVMe storage and USB flash drive.
+
+NVMeストレージとUSBメモリの消去はサポートしていません。
+
+Be sure not to make a mistake in the device-name you specify.
 If you specify the system drive, many of them cannot be erased with "fronzen".
 However, depending on the system configuration you are using, it may be possible to erase it.
 Not to mention the damage caused by suddenly erasing the contents of the system drive.
 
-くれぐれも指定するドライブ名を間違えないようにしてください。
+くれぐれも指定するデバイス名を間違えないようにしてください。
 誤ってシステムドライブを指定した場合、多くは"fronzen"で消去できません。
 しかしシステム構成によっては消去できる場合があります。
 システムドライブの内容をいきなり消去した場合の被害は言うまでもありません。
@@ -101,14 +106,28 @@ In the case of the author, the target SSD is connected with a SATA USB conversio
 
 作者の場合は、対象のSSDを、SATAのUSB変換アダプタで接続してdrive-secure-eraseを使っています。
 
+## drive-secure-erase for HDD
+
+drive-secure-erase can also be used on HDDs.
+However, the process can take a long time, depending on the capacity of the drive and the transfer speed, and can take anywhere from a few hours to a day or more.
+Even if you turn off the power in the middle because it takes a long time, the HDD status will remain locked. To release a locked drive, specify the unlock command.
+
+HDDでもdrive-secure-eraseは利用できます。
+しかしながらその処理にはドライブの容量と転送速度に応じた時間を必要とし、数時間から場合によっては1日以上かかることもあります。
+時間がかかるからといって途中で電源を切って中段しても、HDDの状態はロックされたままになります。ロックされたドライブを解除するにはunlockコマンドを指定します。
+
+```code
+$ drive-secure-erase da1 unlock
+```
+
 ## What does drive-secure-erase do?
 
 Erasing drive-secure-erase does not require any special processing.
-You don't need this command if you use camcontrol's security command on FreeBSD or hdperm's --secure-erase on Linux.
+You don't need this command if you use camcontrol's security command on FreeBSD or hdperm's --secure-erase option on Linux.
 However, using these commands requires a bit of work and is simply not available.
 drive-secure-erase makes use of them internally to make erasure easy to perform.
 
 drive-secure-eraseの消去は特別な処理を行っているわけではありません。
-FreeBSDであればcamcontrolのsecurityコマンド、Linuxではhdpermの--secure-eraseを使えば本コマンドは不要です。
+FreeBSDであればcamcontrolのsecurityコマンド、Linuxではhdpermの--secure-eraseオプションを使えば本コマンドは不要です。
 ただしこれらのコマンドを使うには少しばかりの手続きが必要で、単純には利用できません。
 drive-secure-eraseは内部でそれらを利用して、消去が簡単に実行できるようにしています。
