@@ -50,13 +50,13 @@ First, check to see if the drive is ready to perform secure erase.
 The target drive should be "da1" for FreeBSD or "/dev/sdb" for Linux.
 Be careful not to make a mistake with the target drive.
 Even if you accidentally erase the data on an important drive, you will not be able to recover it.
-Next example uses FreeBSD. In addition, root privileges are required to run.
+Next example uses FreeBSD. Root privileges are required to run.
 
 最初にドライブがセキュアイレースを実行できる状態かどうかを確認します。
 対象のドライブはFreeBSDであれば"da1"、Linuxの場合は"/dev/sdb"のように指定します。
 絶対に対象ドライブを間違えないように注意してください。
 間違えて重要なドライブのデータを消去しても回復できません。
-次の例ではFreeBSDを使用します。また実行にはroot権限が必要です。
+次の例ではFreeBSDを使用します。実行にはroot権限が必要です。
 
 ```code
 $ drive-secure-erase da1
@@ -81,9 +81,6 @@ In a few seconds, the drive will be erased.
 
 ```code
 $ drive-secure-erase da1 yes
-.....
-.....
-$ 
 ```
 
 ## Caution
