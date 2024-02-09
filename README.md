@@ -58,25 +58,36 @@ Next example uses FreeBSD. Root privileges are required to run.
 間違えて重要なドライブのデータを消去しても回復できません。
 次の例ではFreeBSDを使用します。実行にはroot権限が必要です。
 
-```code
-$ drive-secure-erase da1
-......
-......
-
-*** da1 is ready for secure erase.
-$ 
-```
-
 drive-secure-erase reports the status of the drive and lets you know if it can be erased.
 
 drive-secure-erase を実行するとドライブの状態を報告し、消去できるかどうかがわかります。
 
+```code
+$ drive-secure-erase da1
+......
+*** da1 is ready for secure erase.
+$ 
+```
+
+If the drive supports enhanced secure erase, the following is displayed:
+
+ドライブがEnhanced Secure Eraseをサポートしている場合は、次のように表示します。
+
+```code
+$ drive-secure-erase da1
+......
+*** da1 is ready for enhanced secure erase.
+$ 
+```
+
 ### Performing Secure Erase
 
 Once you know that you can erase it, add yes to the argument and run it again.
+If the drive is capable of enhanced secure erase, it will be used, otherwise it will perform secure erase.
 In a few seconds, the drive will be erased.
 
 消去できることがわかったら、引数にyesを追加して再び実行します。
+Enhanced Secure Erase可能ならそれを使い、そうでない場合は通常のSecure Eraseを実行します。
 数秒でドライブの消去が完了します。
 
 ```code
@@ -85,9 +96,23 @@ $ drive-secure-erase da1 yes
 
 ## Caution
 
+In the case of FreeBSD, it may exit with an error message similar to the following, but it will be erased normally.
+
+FreeBSDの場合次のようなエラーメッセージが表示されて終了することがありますが、正常に消去されます。
+
+```
+camcontrol: ATA SECURITY_ERASE_UNIT via pass_16 failed
+```
+
 It does not support erasing NVMe storage and USB flash drive.
 
 NVMeストレージとUSBメモリの消去はサポートしていません。
+
+> To erase NVMe storage, use the nvmecontrol command on FreeBSD or the nvme command in nvme-cli on Linux.
+> USB flash drives do not seem to have the ability to erase them.
+>
+> NVMeのストレージを消去するためには、FreeBSDではnvmecontrolコマンドをLinuxではnvme-cliにあるnvmeコマンドを使います。
+> USBメモリには、消去する機能は存在しないようです。
 
 Be sure not to make a mistake in the device-name you specify.
 If you specify the system drive, many of them cannot be erased with "fronzen".
