@@ -26,7 +26,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 
-#  $Id: drive-secure-erase,v 1.5 2024/02/05 08:06:03 minmin Exp $
+#  $Id: drive-secure-erase,v 1.6 2024/02/09 04:14:45 minmin Exp $
 
 #
 #  WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!!
@@ -120,44 +120,46 @@ __is_locked_Linux () {
 }
 #  --------------------------------------------------
 __do_enable_FreeBSD () {
-	(set -x; camcontrol security ${1} -U ${u} -s ${p})
+	(set -x; camcontrol security ${1} -U ${u} -s ${p}) 2>&1
 }
 __do_enable_Linux () {
-	(set -x; hdparm --user-master ${u} --security-set-pass ${p} ${1})
+	(set -x; hdparm --user-master ${u} --security-set-pass ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_disable_FreeBSD () {
-	(set -x ; camcontrol security ${1} -U ${u} -d ${p})
+	(set -x ; camcontrol security ${1} -U ${u} -d ${p}) 2>&1
 }
 __do_disable_Linux () {
-	(set -x; hdparm --user-master ${u} --security-disable ${p} ${1})
+	(set -x; hdparm --user-master ${u} --security-disable ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_unlock_FreeBSD () {
-	(set -x ; camcontrol security ${1} -U ${u} -k ${p})
+	(set -x ; camcontrol security ${1} -U ${u} -k ${p}) 2>&1
 }
 __do_unlock_Linux () {
-	(set -x; hdparm --user-master ${u} --security-unlock ${p} ${1})
+	(set -x; hdparm --user-master ${u} --security-unlock ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_erase_FreeBSD () {
-	grep '^erase time' ${temp} >&2
-	(set -x; camcontrol security ${1} -U ${u} -e ${p} -y)
+	echo
+	grep '^erase time' ${temp}
+	(set -x; camcontrol security ${1} -q -U ${u} -e ${p} -y) 2>&1
 }
 __do_erase_Linux () {
-	echo >&2
-	grep 'ERASE UNIT' ${temp} >&2
-	(set -x; hdparm --user-master ${u} --security-erase ${p} ${1})
+	echo
+	grep 'ERASE UNIT' ${temp}
+	(set -x; hdparm --user-master ${u} --security-erase ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_enhance_FreeBSD () {
-	grep '^enhanced erase time' ${temp} >&2
-	(set -x; camcontrol security ${1} -U ${u} -h ${p} -y)
+	echo
+	grep '^enhanced erase time' ${temp}
+	(set -x; camcontrol security ${1} -q -U ${u} -h ${p} -y) 2>&1
 }
 __do_enhance_Linux () {
-	echo >&2
-	grep 'ERASE UNIT' ${temp} >&2
-	(set -x; hdparm --user-master ${u} --security-erase-enhanced ${p} ${1})
+	echo
+	grep 'ERASE UNIT' ${temp}
+	(set -x; hdparm --user-master ${u} --security-erase-enhanced ${p} ${1}) 2>&1
 
 }
 #  --------------------------------------------------
@@ -183,26 +185,22 @@ __ready_check () {
 
 	if [ x${2} = xverbose ] && [ ${_ok} = 2 ]; then
 		echo
-		echo '***' ${1} is ready for secure erase.
+		if ${is_enhance}; then
+			echo "*** ${1} is ready for enhanced secure erase."
+		else
+			echo "*** ${1} is ready for secure erase."
+		fi
 	fi
 }
 
 __drive_erase () {
-	local _enhanced
-
 	__ready_check ${1}
-
-	if [ "${2}" = enhance ] && ${is_enhance}; then
-		_enhanced=yes
-	else
-		_enhanced=no
-	fi
 
 	if ! ${is_enabled} ; then
 		${do_enable} ${1}
 	fi
 
-	if [ ${_enhanced} = yes ]; then
+	if ${is_enhance}; then
 		${do_enhance} ${1}
 	else
 		${do_erase} ${1}
@@ -242,7 +240,7 @@ $get_secureinfo ${1}
 
 case "x${2}" in
 
-xyes|xenhance)
+xyes)
 	__drive_erase ${1} ${2}
 	;;
 xunlock)
