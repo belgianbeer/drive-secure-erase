@@ -26,7 +26,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 
-#  $Id: drive-secure-erase,v 1.7 2024/02/09 05:38:48 minmin Exp $
+#  $Id: drive-secure-erase,v 1.8 2024/02/19 06:28:24 minmin Exp $
 
 #
 #  WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!!
@@ -127,38 +127,40 @@ __do_enable_Linux () {
 }
 #  --------------------------------------------------
 __do_disable_FreeBSD () {
-	(set -x ; camcontrol security ${1} -U ${u} -d ${p}) 2>&1
+	(set -x; camcontrol security ${1} -U ${u} -d ${p}) 2>&1
 }
 __do_disable_Linux () {
 	(set -x; hdparm --user-master ${u} --security-disable ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_unlock_FreeBSD () {
-	(set -x ; camcontrol security ${1} -U ${u} -k ${p}) 2>&1
+	(set -x; camcontrol security ${1} -U ${u} -k ${p}) 2>&1
 }
 __do_unlock_Linux () {
 	(set -x; hdparm --user-master ${u} --security-unlock ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
+__display_time () {
+	echo '**************************************************'
+	date +'%F %T'
+	grep "${1}" ${temp}
+	echo '**************************************************'
+}
 __do_erase_FreeBSD () {
-	echo
-	grep '^erase time' ${temp}
+	__display_time '^erase time'
 	(set -x; camcontrol security ${1} -U ${u} -e ${p} -y) 2>&1
 }
 __do_erase_Linux () {
-	echo
-	grep 'ERASE UNIT' ${temp}
+	__display_time 'ERASE UNIT'
 	(set -x; hdparm --user-master ${u} --security-erase ${p} ${1}) 2>&1
 }
 #  --------------------------------------------------
 __do_enhance_FreeBSD () {
-	echo
-	grep '^enhanced erase time' ${temp}
+	__display_time '^enhanced erase time'
 	(set -x; camcontrol security ${1} -U ${u} -h ${p} -y) 2>&1
 }
 __do_enhance_Linux () {
-	echo
-	grep 'ERASE UNIT' ${temp}
+	__display_time 'ERASE UNIT'
 	(set -x; hdparm --user-master ${u} --security-erase-enhanced ${p} ${1}) 2>&1
 
 }
