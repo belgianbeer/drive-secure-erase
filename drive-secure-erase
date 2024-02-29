@@ -26,7 +26,7 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 
-#  $Id: drive-secure-erase,v 1.8 2024/02/19 06:28:24 minmin Exp $
+#  $Id: drive-secure-erase,v 1.9 2024/02/29 05:57:27 minmin Exp $
 
 #
 #  WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!! WARNING!!
@@ -202,7 +202,7 @@ __drive_erase () {
 		${do_enable} ${1}
 	fi
 
-	if ${is_enhance}; then
+	if ${is_enhance} && [ "${2}" = yes ]; then
 		${do_enhance} ${1}
 	else
 		${do_erase} ${1}
@@ -242,7 +242,7 @@ $get_secureinfo ${1}
 
 case "x${2}" in
 
-xyes)
+xyes|xnoenhance)
 	__drive_erase ${1} ${2}
 	;;
 xunlock)
